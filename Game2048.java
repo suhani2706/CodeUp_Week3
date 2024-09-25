@@ -20,8 +20,12 @@ public class Game2048 {
 	        "\u001B[48;5;46m",   // 2048 - Bright green
 	        "\u001B[48;5;21m",   // Above 2048 - Blue
 	    };
+	 public static void exitGame(int score) {
+	        System.out.println("Thank you for playing! Your final score is: " + score);
+	        System.exit(0); 
+	    }
 
-	
+	//Main function
     public static void main(String[] args) {
         boolean playAgain;
         Scanner scanner = new Scanner(System.in);
@@ -64,6 +68,12 @@ public class Game2048 {
                         logic.undo(); 
                         moved = false;
                         break;
+                    case 'e': 
+                        exitGame(logic.getScore());
+                        break;
+                    default:
+                        System.out.println("Invalid move! Please enter w/a/s/d/u/e.");
+                        continue; 
                 }
 
                 if (moved) {
@@ -95,10 +105,10 @@ public class Game2048 {
         boolean validInput = false;
 
         while (!validInput) {
-            System.out.print("Enter move (w/a/s/d) or 'u' for undo: ");
+            System.out.print("Enter move (w/a/s/d) or 'u' for undo or 'e' for exit: ");
             String input = scanner.nextLine();
 
-            if (input.length() == 1 && "wasdu".contains(input.toLowerCase())) {
+            if (input.length() == 1 && "wasdue".contains(input.toLowerCase())) {
                 move = input.toLowerCase().charAt(0);
                 validInput = true;
             } else {
@@ -108,4 +118,6 @@ public class Game2048 {
 
         return move;
     }
+    
+   
 }

@@ -7,37 +7,33 @@
 
 package com.Gamepedia;
 
-
-import java.util.*;
-
-
-
 public class Logic2048 {
-	public static final String RESET1 = "\u001B[0m";
-
-	// Black text color
-	public static final String BLACK_TEXT = "\u001B[30m";
-	public static final String WHITE_TEXT = "\u001B[37m";
+	//Static variables
+    public static final String RESET1 = "\u001B[0m";
+    public static final String BLACK_TEXT = "\u001B[30m";
+    public static final String WHITE_TEXT = "\u001B[37m";
 
     private int[][] previousBoard;
     private int[][] board;
     private int score;
     private int moveCount;
     private static final int SIZE = 4;
-
+    
+    //constructor
     public Logic2048() {
         board = new int[SIZE][SIZE];
-        previousBoard = new int[SIZE][SIZE]; // Used for undo functionality
+        previousBoard = new int[SIZE][SIZE]; 
         score = 0;
         moveCount = 0;
         placeRandomTile();
-        placeRandomTile();
     }
 
+    //Saving score
     public int getScore() {
         return score;
     }
 
+    //Printing the colored board
     public void printColoredBoard() {
         System.out.println("--------------------------");
         for (int i = 0; i < SIZE; i++) {
@@ -55,28 +51,35 @@ public class Logic2048 {
         System.out.println("--------------------------");
     }
 
+    //Placing the numbers in random tile
     public void placeRandomTile() {
-        List<int[]> emptyPositions = new ArrayList<>();
+        int[][] emptyPositions = new int[SIZE * SIZE][2];
+        int count = 0;
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
                 if (board[i][j] == 0) {
-                    emptyPositions.add(new int[]{i, j});
+                    emptyPositions[count][0] = i;
+                    emptyPositions[count][1] = j;
+                    count++;
                 }
             }
         }
 
-        if (!emptyPositions.isEmpty()) {
-            int[] pos = emptyPositions.get(new Random().nextInt(emptyPositions.size()));
-            board[pos[0]][pos[1]] = Math.random() < 0.9 ? 2 : 4; // Randomly place 2 or 4
+        if (count > 0) {
+            int[] pos = emptyPositions[(int)(Math.random() * count)];
+            board[pos[0]][pos[1]] = Math.random() < 0.9 ? 2 : 4;
         }
     }
 
+    //Saving every state if user wants to undo
     public void saveState() {
         for (int i = 0; i < SIZE; i++) {
             System.arraycopy(board[i], 0, previousBoard[i], 0, SIZE);
         }
     }
 
+    
+    //If user wants to undo
     public void undo() {
         for (int i = 0; i < SIZE; i++) {
             System.arraycopy(previousBoard[i], 0, board[i], 0, SIZE);
@@ -84,24 +87,29 @@ public class Logic2048 {
         System.out.println("Undo successful!");
     }
 
+    //Moving up
     public boolean moveUp() {
-        return move(0, -1);
-    }
-
-    public boolean moveDown() {
-        return move(0, 1);
-    }
-
-    public boolean moveLeft() {
         return move(-1, 0);
     }
 
-    public boolean moveRight() {
+  //Moving down
+    public boolean moveDown() {
         return move(1, 0);
     }
 
+  //Moving left
+    public boolean moveLeft() {
+        return move(0, -1);
+    }
+
+  //Moving right
+    public boolean moveRight() {
+        return move(0, 1);
+    }
+
+  //Moving the number blocks
     private boolean move(int dx, int dy) {
-        saveState(); // Save current state before move
+        saveState();
         boolean moved = false;
 
         for (int i = 0; i < SIZE; i++) {
@@ -122,48 +130,67 @@ public class Logic2048 {
         return moved;
     }
 
+    //Moving the tile to input direction
     private boolean moveTile(int x, int y, int dx, int dy) {
+        int newX = x;
+        int newY = y;
         boolean moved = false;
-        while (x + dx >= 0 && x + dx < SIZE && y + dy >= 0 && y + dy < SIZE && board[x + dx][y + dy] == 0) {
-            board[x + dx][y + dy] = board[x][y];
-            board[x][y] = 0;
-            x += dx;
-            y += dy;
+
+        // Move the tile in the given direction until it reaches a boundary or another tile
+        while (isValid(newX + dx, newY + dy) && board[newX + dx][newY + dy] == 0) {
+            newX += dx;
+            newY += dy;
             moved = true;
         }
 
-        if (x + dx >= 0 && x + dx < SIZE && y + dy >= 0 && y + dy < SIZE && board[x + dx][y + dy] == board[x][y]) {
-            board[x + dx][y + dy] *= 2;
-            score += board[x + dx][y + dy];
+        // If moved, update the board by shifting the tile
+        if (moved) {
+            board[newX][newY] = board[x][y];
             board[x][y] = 0;
+        }
+
+        // If the next tile has the same value, merge them
+        if (isValid(newX + dx, newY + dy) && board[newX + dx][newY + dy] == board[newX][newY]) {
+            board[newX + dx][newY + dy] *= 2;
+            score += board[newX + dx][newY + dy];
+            board[newX][newY] = 0;
             moved = true;
         }
 
         return moved;
     }
 
+    // Helper method to check if the next move is within bounds
+    private boolean isValid(int x, int y) {
+        return x >= 0 && x < SIZE && y >= 0 && y < SIZE;
+    }
+
+
+    //Checking if the game ends
     public boolean checkGameOver() {
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
-                if (board[i][j] == 0) return false; // Empty space
-                if (i < SIZE - 1 && board[i][j] == board[i + 1][j]) return false; // Same tile vertically
-                if (j < SIZE - 1 && board[i][j] == board[i][j + 1]) return false; // Same tile horizontally
+                if (board[i][j] == 0) return false;
+                if (i < SIZE - 1 && board[i][j] == board[i + 1][j]) return false;
+                if (j < SIZE - 1 && board[i][j] == board[i][j + 1]) return false;
             }
         }
         return true;
     }
 
+    //Returns a string representation of the current board state.
     public String getBoardState() {
-        StringBuilder state = new StringBuilder();
-        for (int[] row : board) {
-            for (int tile : row) {
-                state.append(tile).append(" ");
+        String state = "";
+        for (int i = 0; i < SIZE; i++) { 
+            for (int j = 0; j < SIZE; j++) {
+                state += board[i][j] + " ";
             }
-            state.append("\n");
+            state += "\n"; 
         }
-        return state.toString();
+        return state;
     }
-
+    
+    //Returns the highest tile value on the board
     public int getHighTile() {
         int maxTile = 0;
         for (int[] row : board) {
@@ -180,12 +207,27 @@ public class Logic2048 {
         return moveCount;
     }
 
-    // Utility function to map tile value to a color
     private String getColor(int value) {
-        if (value == 0) return Game2048.COLORS[0];
-        int index = (int) (Math.log(value) / Math.log(2));
-        return index < Game2048.COLORS.length ? Game2048.COLORS[index] : Game2048.COLORS[Game2048.COLORS.length - 1];
+        if (value == 0) return Game2048.COLORS[0]; 
+
+        switch (value) {
+            case 2: return Game2048.COLORS[1];
+            case 4: return Game2048.COLORS[2];
+            case 8: return Game2048.COLORS[3];
+            case 16: return Game2048.COLORS[4];
+            case 32: return Game2048.COLORS[5];
+            case 64: return Game2048.COLORS[6];
+            case 128: return Game2048.COLORS[7];
+            case 256: return Game2048.COLORS[8];
+            case 512: return Game2048.COLORS[9];
+            case 1024: return Game2048.COLORS[10];
+            case 2048: return Game2048.COLORS[11];
+            default: return Game2048.COLORS[Game2048.COLORS.length - 1]; // Default for larger values
+        }
     }
 }
+
+
+
 
         
